@@ -8,10 +8,10 @@ all of it is used.  Design memo: `../docs/DESIGN_MMU.md`.
 `cat` work with 256KB and more.  With 128KB login, shell, `ls`, `ps` work too.
 Not tried on the real FM-11.**
 
-    ../out_mmu/fuzix_mmu_fd0.img   boot disk: IPL, kernel, root file system (raw 2HD)   -> drive 0
-    ../out_mmu/fuzix_mmu_fd1.img   second disk (same layout as stage 1, the kernel does not swap yet)  -> drive 1
-    ../out_mmu/*.hfe               the same for FlashFloppy / Gotek
-    ../out_mmu/fuzix.map           link map
+    ../diskimage/mmu/fuzix_mmu_fd0.img   boot disk: IPL, kernel, root file system (raw 2HD)   -> drive 0
+    ../diskimage/mmu/fuzix_mmu_fd1.img   second disk (same layout as stage 1, the kernel does not swap yet)  -> drive 1
+    ../diskimage/mmu/*.hfe               the same for FlashFloppy / Gotek
+    ../diskimage/mmu/fuzix.map           link map
 
 Emulator: `fm11 --headless FRAMES s.ppm -f0 fuzix_mmu_fd0.img -f1 fuzix_mmu_fd1.img --dipsw 0xBF --mem 256 --text t.txt --mute`
 (`--keyat 16000 --keygap 60 --keys $'\r\r\r\r\rroot\r\rls /\r'`; the machine is slower with less memory, wait longer).

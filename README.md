@@ -33,9 +33,9 @@ Use Level 2 (`fuzix-fm11mmu`) unless you have a reason not to.
 
 ### Disk images
 
-Prebuilt images are in `out_mmu/` (Level 2) and `out/` (Level 1). The `.img` files are raw 2HD disks (1,021,696 bytes); the `.hfe` files are the same disks for FlashFloppy / Gotek (3,233,792 bytes). The contents below were checked from the partition tables of the images.
+Prebuilt images are in `diskimage/mmu/` (Level 2) and `diskimage/no_mmu/` (Level 1). The `.img` files are raw 2HD disks (1,021,696 bytes); the `.hfe` files are the same disks for FlashFloppy / Gotek (3,233,792 bytes). The contents below were checked from the partition tables of the images.
 
-**Level 2 (`out_mmu/`, recommended)**
+**Level 2 (`diskimage/mmu/`, recommended)**
 
 | File | Content | Use |
 |---|---|---|
@@ -45,7 +45,7 @@ Prebuilt images are in `out_mmu/` (Level 2) and `out/` (Level 1). The `.img` fil
 | `fuzix.map` | Link map | Debugging |
 | `FF.CFG` | FlashFloppy configuration (`interface = shugart`, `pin02 = nc`, `pin34 = rdy`, `motor-delay = ignore`, `nav-mode = native`) | Put it in the root of the USB stick |
 
-**Level 1 (`out/`)**
+**Level 1 (`diskimage/no_mmu/`)**
 
 | File | Content | Use |
 |---|---|---|
@@ -138,9 +138,9 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 ### ディスクイメージ
 
-ビルド済みのイメージは `out_mmu/`（レベル 2）と `out/`（レベル 1）にあります。`.img` は生の 2HD（1,021,696 バイト）、`.hfe` は同じディスクを FlashFloppy / Gotek 用に変換したもの（3,233,792 バイト）です。以下の内容は、イメージのパーティションテーブルを読んで確認したものです。
+ビルド済みのイメージは `diskimage/mmu/`（レベル 2）と `diskimage/no_mmu/`（レベル 1）にあります。`.img` は生の 2HD（1,021,696 バイト）、`.hfe` は同じディスクを FlashFloppy / Gotek 用に変換したもの（3,233,792 バイト）です。以下の内容は、イメージのパーティションテーブルを読んで確認したものです。
 
-**レベル 2（`out_mmu/`、推奨）**
+**レベル 2（`diskimage/mmu/`、推奨）**
 
 | ファイル | 内容 | 使い方 |
 |---|---|---|
@@ -150,7 +150,7 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 | `fuzix.map` | リンクマップ | デバッグ用 |
 | `FF.CFG` | FlashFloppy の設定（`interface = shugart`、`pin02 = nc`、`pin34 = rdy`、`motor-delay = ignore`、`nav-mode = native`） | USB メモリの直下に置く |
 
-**レベル 1（`out/`）**
+**レベル 1（`diskimage/no_mmu/`）**
 
 | ファイル | 内容 | 使い方 |
 |---|---|---|

@@ -6,10 +6,10 @@ from the MK09 FM-11 port (`mk09/bsp/fm11`, `mk09/arch/m6809/kernel.s`, `mk09/boo
 **Status (2026-11-21): builds, and boots in the Fm11gtk emulator (headless, 2HD, DIPSW 0xBF) to the login prompt;
 `root` (empty password) gets a shell; `ls /bin`, `echo hi > /t.txt`, `cat`, `ps`, `df` work.  Not tried on the real FM-11 yet.**
 
-    out/fuzix_fd0.img  boot disk: IPL, kernel, root file system (raw 2HD, 1021696 bytes)   -> drive 0
-    out/fuzix_fd1.img  swap disk (partition 1, type 0x7F, 480 blocks)                      -> drive 1
-    out/*.hfe          the same for FlashFloppy / Gotek (mk09-port/dist/img2hfe_2hd.py)
-    out/fuzix.map      link map          out/fuzix_kernel.img  the kernel in the boot image format
+    ../diskimage/no_mmu/fuzix_fd0.img  boot disk: IPL, kernel, root file system (raw 2HD, 1021696 bytes)   -> drive 0
+    ../diskimage/no_mmu/fuzix_fd1.img  swap disk (partition 1, type 0x7F, 480 blocks)                      -> drive 1
+    ../diskimage/no_mmu/*.hfe          the same for FlashFloppy / Gotek (mk09-port/dist/img2hfe_2hd.py)
+    ../diskimage/no_mmu/fuzix.map      link map          ../diskimage/no_mmu/fuzix_kernel.img  the kernel in the boot image format
 
 Emulator: `fm11 --headless FRAMES s.ppm -f0 fuzix_fd0.img -f1 fuzix_fd1.img --dipsw 0xBF --text t.txt --mute`
 (`--keyat 20000 --keygap 250 --keys "||root||ls /|"`: the first two Enter answer the date and time questions of init).
