@@ -1,0 +1,18 @@
+; SPDX-License-Identifier: GPL-2.0-only
+; Copyright (c) 2026 KAYANUMA Shin'ichi
+; UZI mnemonics for memory addresses etc
+
+U_DATA__TOTALSIZE           equ 0x0200        ; 256+256
+
+PROGBASE                    equ 0x6F00       ; programs and data start here
+
+; FM-11 (MMU off, flat 64KB).  I/O page $FD00-$FDFF, see fm11.s
+FM_KEYH			    equ 0xFD00
+FM_KEYL			    equ 0xFD01
+FM_IMSK			    equ 0xFD02
+FM_IFLG			    equ 0xFD03
+FM_SUBST		    equ 0xFD05
+FM_PTMC13		    equ 0xFD38
+FM_PTMC2		    equ 0xFD39
+FM_PTM2H		    equ 0xFD3C
+FM_MCFG			    equ 0xFD93

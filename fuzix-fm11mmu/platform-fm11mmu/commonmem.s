@@ -1,0 +1,29 @@
+; SPDX-License-Identifier: GPL-2.0-only
+; Copyright (c) 2026 KAYANUMA Shin'ichi
+;
+        .module commonmem
+
+        ; exported symbols
+        .globl _ub
+        .globl _udata
+        .globl kstack_top
+        .globl istack_top
+        .globl istack_switched_sp
+
+	; udata and the kernel stack: the top of the logical page $E000 of every process ($EE00-$EFFF)
+        .area .udata
+
+_ub:    ; first 512 bytes: starts with struct u_block, with the kernel stack working down from above
+_udata:
+kstack_base:
+	zmb 512
+kstack_top:
+
+	; the interrupt stack is in the common page: it is the same in both map sets
+	.area .istack
+
+        ; 254 byte interrupt stack, then 2 byte saved stack pointer
+istack_base:
+	zmb 254
+istack_top:
+istack_switched_sp: .dw 0
