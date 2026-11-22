@@ -95,6 +95,7 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 * The FM-11 port (`platform-fm11*`, `mkfd.py`, `mkimage.py`, the build scripts) is **GPL-2.0-only**, the same as the FUZIX kernel it is part of (`LICENSE`, SPDX header in each source file; the few files without a header, such as `fuzix.link`, `map.info` and `fuzix.export`, are under the same license).
 * `fuzix-fm11/boot/ipl_fm11_2hd.s` (the IPL boot sector, from MK09) is **MIT**, Copyright (c) 2026 YUKARI Semiconductor Devices (`LICENSE-MIT`). It is a stand-alone boot sector and is not linked into the kernel.
 * FUZIX itself is by Alan Cox and contributors (GPL-2.0, libraries LGPL; see the FUZIX `LICENCE` and `CREDITS`). `bank4k.c` is derived from FUZIX `bank8k.c`, and stage 1 from `platform-sim09`.
+* This port was developed with the help of [Claude Code](https://claude.com/claude-code) (Anthropic's AI coding tool); the author directed the work and tested it on the emulator and the real machine.
 * "FUJITSU" and "FM-11" are trademarks of their owners. This project is not affiliated with Fujitsu.
 
 ---
@@ -190,4 +191,5 @@ Copyright (c) 2026 KAYANUMA Shin'ichi（FM-11 版）。
 * FM-11 版（`platform-fm11*`、`mkfd.py`、`mkimage.py`、ビルドスクリプト）は、組み込み先の FUZIX カーネルと同じ **GPL-2.0-only** です（`LICENSE`、各ソースファイルの先頭に SPDX 表記）。`fuzix.link`、`map.info`、`fuzix.export` など表記のないファイルも同じライセンスです。
 * `fuzix-fm11/boot/ipl_fm11_2hd.s`（MK09 由来の IPL ブートセクタ）は **MIT** で、Copyright (c) 2026 YUKARI Semiconductor Devices です（`LICENSE-MIT`）。単独のブートセクタで、カーネルにはリンクされません。
 * FUZIX 本体は Alan Cox らの作品です（GPL-2.0、ライブラリは LGPL。FUZIX の `LICENCE` と `CREDITS` を参照）。`bank4k.c` は FUZIX の `bank8k.c`、ステージ 1 は `platform-sim09` が元です。
+* この移植は [Claude Code](https://claude.com/claude-code)（Anthropic の AI コーディングツール）の支援を受けて開発しました。作者が方針を決め、エミュレータと実機で動作を確認しています。
 * 「FUJITSU」「FM-11」は各権利者の商標です。本プロジェクトは富士通とは無関係です。
