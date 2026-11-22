@@ -25,7 +25,7 @@ Use Level 2 (`fuzix-fm11mmu`) unless you have a reason not to.
 
 ### Features of Level 2
 
-* **MMU** (`$FD80–$FD93`): coco3-style two map sets. Set 0 = kernel (identity), set 1 = current process (reloaded lazily from a 16-byte page table). Windows at `$A000` / `$B000` give the kernel access to any physical page for user-memory access and `fork` copies.
+* **MMU** (`$FD80–$FD93`): the FM-11's own MMU (16 map sets of 16 × 4KB pages, a window at `$7C00`, `$FC00–$FFFF` not remapped). The kernel uses only two of the map sets, the way the FUZIX CoCo 3 port does: set 0 = kernel (identity), set 1 = current process (reloaded lazily from a 16-byte page table). Windows at `$A000` / `$B000` give the kernel access to any physical page for user-memory access and `fork` copies.
 * **Memory detection** (`memprobe` in `fm11.s`, after MK09): probes in 128KB steps through the MMU window, restores what it touched, and builds the page pool from the result.
 * **Page manager** `bank4k.c` (derived from `bank8k.c`): 4KB pages, per-process page table, reference counts for shared pages.
 * **Process size**: if the binary does not set `a_size`, text+data+bss rounded up to whole pages plus 2KB (16KB when the pool is 160KB or more) for stack and heap. `chmem` gives a program more room. The last page of a program is also the page holding `udata`, so a process costs one page less.
@@ -119,7 +119,7 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 ### レベル 2 の特徴
 
-* **MMU**（`$FD80〜$FD93`）：coco3 方式の 2 マップセット構成です。セット 0 がカーネル（恒等写像）、セット 1 が現在のプロセスで、16 バイトのページ表から必要なときにだけ再設定します。`$A000` / `$B000` の窓から任意の物理ページに触れるので、ユーザメモリのアクセスや `fork` のコピーに使います。
+* **MMU**（`$FD80〜$FD93`）：FM-11 独自の MMU です（4KB × 16 ページのマップセットが 16 組、`$7C00` に窓、`$FC00〜$FFFF` は対象外）。カーネルは、FUZIX の CoCo 3 版と同じように、そのうち 2 組だけを使います。セット 0 がカーネル（恒等写像）、セット 1 が現在のプロセスで、16 バイトのページ表から必要なときにだけ再設定します。`$A000` / `$B000` の窓から任意の物理ページに触れるので、ユーザメモリのアクセスや `fork` のコピーに使います。
 * **メモリ自動検出**（`fm11.s` の `memprobe`、MK09 由来）：MMU の窓越しに 128KB 刻みで試し書きし、触った内容を元に戻して、結果からページプールを作ります。
 * **ページ管理** `bank4k.c`（`bank8k.c` を改造）：4KB ページ、プロセスごとのページ表、共有ページの参照カウント。
 * **プロセスサイズ**：バイナリが `a_size` を指定しない場合は、text+data+bss をページ単位に切り上げ、さらにスタックとヒープ用に 2KB（プールが 160KB 以上なら 16KB）を足します。`chmem` で増やせます。プログラムの最後のページは `udata` のページと同じなので、プロセス 1 つあたり 1 ページ節約できます。
