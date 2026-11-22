@@ -1,4 +1,4 @@
-# FUZIX for the FUJITSU FM-11 / FUJITSU FM-11 向け FUZIX
+# FUZIX for the FUJITSU MICRO 11 (FM-11) / FUJITSU MICRO 11 (FM-11) 向け FUZIX
 
 [日本語](#日本語) | [English](#english)
 
@@ -6,25 +6,24 @@
 
 ## English
 
-A port of [FUZIX](https://github.com/EtchedPixels/FUZIX) (a UNIX-like OS by Alan Cox and contributors) to the **FUJITSU FM-11** (Motorola MC6809, 2HD floppies, 128KB–1MB RAM, MMU).
+A port of [FUZIX](https://github.com/EtchedPixels/FUZIX) (a UNIX-like OS by Alan Cox and contributors) to the **FUJITSU MICRO 11** (FM-11) (Motorola MC6809, 2HD floppies, 128KB–1MB RAM, MMU).
 
 There are two ports in this repository:
 
-| Directory | Stage | What it is |
+| Directory | Level | What it is |
 |---|---|---|
 | `fuzix-fm11/` | 1 | MMU off, 64KB flat, one process in memory, swap only. Derived from the `platform-sim09` of FUZIX. |
 | `fuzix-fm11mmu/` | 2 | **MMU on**: 4KB pages, several processes in RAM, **installed memory detected automatically and all of it used** (128KB–1MB), text sharing on `fork`, swap to disk. |
 
-Use stage 2 (`fuzix-fm11mmu`) unless you have a reason not to.
+Use Level 2 (`fuzix-fm11mmu`) unless you have a reason not to.
 
 ### Status
 
-* Boots to the login prompt in the Fm11gtk emulator with 128 / 256 / 384 / 640 / 1024KB. `root` (empty password) gets a shell; `ls`, `ps`, `cat`, `dd`, `od`, `mount`, `reboot` etc. work.
-* Reported running on a real FM-11 with 896KB (the banner shows `896K RAM (MMU on), 848K for processes`). Real-hardware testing is still in progress: the swap partition on a second drive, the behaviour of unmapped memory reads and the parity NMI (`$FD57`) are **not verified on a real machine**.
+* Running on a real FM-11 with 896KB (the banner shows `896K RAM (MMU on), 848K for processes`). `root` (empty password) gets a shell and the standard FUZIX commands (`ls`, `ps`, `cat`, `dd`, `od`, `mount`, `reboot` ...) are available. Real-hardware testing is still in progress: the swap partition on a second drive, the behaviour of unmapped memory reads and the parity NMI (`$FD57`) are **not verified on a real machine**.
 * `shutdown` / `halt` stop the machine (`Halted.`); the FM-11 cannot be switched off by software.
 * `login` prints `unable to change owner of controlling tty` (harmless so far).
 
-### Features of stage 2
+### Features of Level 2
 
 * **MMU** (`$FD80–$FD93`): coco3-style two map sets. Set 0 = kernel (identity), set 1 = current process (reloaded lazily from a 16-byte page table). Windows at `$A000` / `$B000` give the kernel access to any physical page for user-memory access and `fork` copies.
 * **Memory detection** (`memprobe` in `fm11.s`, after MK09): probes in 128KB steps through the MMU window, restores what it touched, and builds the page pool from the result.
@@ -47,15 +46,6 @@ Boot log of the combined disk: `hda: hda1 hda2 (swap)`.
 
 ### Running
 
-**Emulator** ([Fm11gtk](https://github.com/)-style emulator with `--headless` test mode):
-
-```
-fm11 --headless FRAMES out.ppm -f0 fuzix_mmu_fd0.img --dipsw 0xBF --mem 256 --text t.txt --mute \
-     --keyat 16000 --keygap 60 --keys $'\r\r\r\r\rroot\r\rls /\r'
-```
-
-The first Enter keys answer init's date and time questions. Machines with less memory are slower, so wait longer.
-
 **Real FM-11**: use a 2HD drive or a Gotek with FlashFloppy and `fuzix_mmu_fd0.hfe`. DIPSW as for a 2HD boot disk of MK09; `FF.CFG` as for MK09 (`interface = shugart`, pin02 `nc`, pin34 `rdy`).
 
 * A single Gotek cannot emulate two drives. If you put jumpers on both DS0 and DS1, the second drive shows the same image as the first, so `hdb` is a copy of the boot disk. **Use only the S0 jumper** and the combined disk. Do not write to `/dev/hdb*` in that state.
@@ -73,7 +63,15 @@ fetches the FUZIX revision the port was made with, copies `platform-fm11mmu/` in
 
 `fuzix-fm11/mkfd.py` builds the disk images (`-b` kernel blocks, `-S` swap on drive 0, `-s`/`-o1` separate swap disk, `-u` a `/usr` file system).
 
-### Layout of the kernel (stage 2)
+### FM-11 specific commands
+
+None. The user space is the standard FUZIX one (the V7 shell and the FUZIX utilities); everything specific to the FM-11 is in the kernel and in the tools that build the disks:
+
+* kernel drivers: console on the display sub-CPU, keyboard, 2HD floppy (MB8877 + DMA), the MMU and the memory detection;
+* `fuzix-fm11/mkfd.py` builds the boot disk (IPL, partition table, kernel, root file system, optional swap partition);
+* the root file system is the minimal FUZIX one, with `od` added. Use `chmem` to give a program more memory than the default size.
+
+### Layout of the kernel (Level 2)
 
 | Logical | Use |
 |---|---|
@@ -94,33 +92,32 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 * The FM-11 port (`platform-fm11*`, `mkfd.py`, `mkimage.py`, the build scripts) is **GPL-2.0-only**, the same as the FUZIX kernel it is part of (`LICENSE`, SPDX header in each source file; the few files without a header, such as `fuzix.link`, `map.info` and `fuzix.export`, are under the same license).
 * `fuzix-fm11/boot/ipl_fm11_2hd.s` (the IPL boot sector, from MK09) is **MIT**, Copyright (c) 2026 YUKARI Semiconductor Devices (`LICENSE-MIT`). It is a stand-alone boot sector and is not linked into the kernel.
-* FUZIX itself is by Alan Cox and contributors (GPL-2.0, libraries LGPL; see the FUZIX `LICENCE` and `CREDITS`). `bank4k.c` is derived from FUZIX `bank8k.c`, and stage 1 from `platform-sim09`.
-* This port was developed with the help of [Claude Code](https://claude.com/claude-code) (Anthropic's AI coding tool); the author directed the work and tested it on the emulator and the real machine.
-* "FUJITSU" and "FM-11" are trademarks of their owners. This project is not affiliated with Fujitsu.
+* FUZIX itself is by Alan Cox and contributors (GPL-2.0, libraries LGPL; see the FUZIX `LICENCE` and `CREDITS`). `bank4k.c` is derived from FUZIX `bank8k.c`, and Level 1 from `platform-sim09`.
+* This port was developed with the help of [Claude Code](https://claude.com/claude-code) (Anthropic's AI coding tool); the author directed the work.
+* "FUJITSU", "FUJITSU MICRO" and "FM-11" are trademarks of their owners. This project is not affiliated with Fujitsu.
 
 ---
 
 ## 日本語
 
-[FUZIX](https://github.com/EtchedPixels/FUZIX)（Alan Cox らによる UNIX 風 OS）を、**FUJITSU FM-11**（MC6809、2HD フロッピー、RAM 128KB〜1MB、MMU 搭載）へ移植したものです。
+[FUZIX](https://github.com/EtchedPixels/FUZIX)（Alan Cox らによる UNIX 風 OS）を、**FUJITSU MICRO 11**（FM-11、MC6809、2HD フロッピー、RAM 128KB〜1MB、MMU 搭載）へ移植したものです。
 
 このリポジトリには 2 つの移植版があります。
 
-| ディレクトリ | ステージ | 内容 |
+| ディレクトリ | レベル | 内容 |
 |---|---|---|
 | `fuzix-fm11/` | 1 | MMU を使わない 64KB フラット構成。メモリ上のプロセスは 1 つで、スワップのみ。FUZIX の `platform-sim09` が元です。 |
 | `fuzix-fm11mmu/` | 2 | **MMU 使用**。4KB ページ、複数プロセスの同時常駐、**実装メモリの自動検出と全量使用**（128KB〜1MB）、`fork` 時のテキスト共有、ディスクへのスワップ。 |
 
-特に理由がなければステージ 2（`fuzix-fm11mmu`）を使ってください。
+特に理由がなければレベル 2（`fuzix-fm11mmu`）を使ってください。
 
 ### 状態
 
-* Fm11gtk エミュレータで、メモリ 128 / 256 / 384 / 640 / 1024KB のいずれもログインプロンプトまで起動します。`root`（パスワードなし）でシェルに入り、`ls`、`ps`、`cat`、`dd`、`od`、`mount`、`reboot` などが動きます。
-* 実機（896KB 搭載の FM-11）で動作したとの報告があります（バナーは `896K RAM (MMU on), 848K for processes`）。実機での確認は進行中で、2 台目ドライブ上のスワップ区画、未実装メモリの読み出し時の挙動、パリティ NMI（`$FD57`）は**実機では未確認**です。
+* 実機（896KB 搭載の FM-11）で動作しています（バナーは `896K RAM (MMU on), 848K for processes`）。`root`（パスワードなし）でシェルに入り、標準の FUZIX コマンド（`ls`、`ps`、`cat`、`dd`、`od`、`mount`、`reboot` など）が使えます。実機での確認は進行中で、2 台目ドライブ上のスワップ区画、未実装メモリの読み出し時の挙動、パリティ NMI（`$FD57`）は**実機では未確認**です。
 * `shutdown` / `halt` は `Halted.` と表示して停止します。FM-11 はソフトウェアで電源を切れません。
 * `login` で `unable to change owner of controlling tty` と出ますが、今のところ実害はありません。
 
-### ステージ 2 の特徴
+### レベル 2 の特徴
 
 * **MMU**（`$FD80〜$FD93`）：coco3 方式の 2 マップセット構成です。セット 0 がカーネル（恒等写像）、セット 1 が現在のプロセスで、16 バイトのページ表から必要なときにだけ再設定します。`$A000` / `$B000` の窓から任意の物理ページに触れるので、ユーザメモリのアクセスや `fork` のコピーに使います。
 * **メモリ自動検出**（`fm11.s` の `memprobe`、MK09 由来）：MMU の窓越しに 128KB 刻みで試し書きし、触った内容を元に戻して、結果からページプールを作ります。
@@ -143,15 +140,6 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 ### 実行方法
 
-**エミュレータ**（`--headless` のテストモードがある Fm11gtk 系）：
-
-```
-fm11 --headless FRAMES out.ppm -f0 fuzix_mmu_fd0.img --dipsw 0xBF --mem 256 --text t.txt --mute \
-     --keyat 16000 --keygap 60 --keys $'\r\r\r\r\rroot\r\rls /\r'
-```
-
-最初の Enter は init の日付と時刻の質問への応答です。メモリが少ないほど動作が遅いので、待ち時間を長めにしてください。
-
 **実機の FM-11**：2HD ドライブ、または FlashFloppy を入れた Gotek と `fuzix_mmu_fd0.hfe` を使います。DIPSW は MK09 の 2HD 起動ディスクと同じ、Gotek の `FF.CFG` も MK09 と同じです（`interface = shugart`、pin02 `nc`、pin34 `rdy`）。
 
 * Gotek 1 台で 2 台分のドライブは再現できません。DS0 と DS1 の両方にジャンパを入れると、2 台目も 1 台目と同じイメージを返し、`hdb` が起動ディスクのコピーに見えます。**ジャンパは S0 だけ**にして、上の同居版ディスクを使ってください。その状態で `/dev/hdb*` に書き込まないでください。
@@ -169,7 +157,15 @@ m6809 用 `gcc` 4.6.4（FUZIX が使うもの）、`lwtools`、`perl`、`python3
 
 ディスクイメージは `fuzix-fm11/mkfd.py` で作ります（`-b` カーネル用ブロック数、`-S` ドライブ 0 のスワップ、`-s` / `-o1` スワップ専用ディスク、`-u` `/usr` 用ファイルシステム）。
 
-### メモリ配置（ステージ 2）
+### FM-11 向けの独自コマンド
+
+ありません。ユーザ空間は標準の FUZIX（V7 シェルと FUZIX のユーティリティ）のままで、FM-11 固有の部分はカーネルとディスクを作るツールにあります。
+
+* カーネルのドライバ：表示サブ CPU のコンソール、キーボード、2HD フロッピー（MB8877 と DMA）、MMU とメモリ自動検出。
+* `fuzix-fm11/mkfd.py`：起動ディスク（IPL、区画テーブル、カーネル、ルートファイルシステム、任意でスワップ区画）を作ります。
+* ルートファイルシステムは FUZIX の最小構成に `od` を足したものです。プログラムに既定より多くのメモリを与えるときは `chmem` を使います。
+
+### メモリ配置（レベル 2）
 
 | 論理アドレス | 用途 |
 |---|---|
@@ -190,6 +186,6 @@ Copyright (c) 2026 KAYANUMA Shin'ichi（FM-11 版）。
 
 * FM-11 版（`platform-fm11*`、`mkfd.py`、`mkimage.py`、ビルドスクリプト）は、組み込み先の FUZIX カーネルと同じ **GPL-2.0-only** です（`LICENSE`、各ソースファイルの先頭に SPDX 表記）。`fuzix.link`、`map.info`、`fuzix.export` など表記のないファイルも同じライセンスです。
 * `fuzix-fm11/boot/ipl_fm11_2hd.s`（MK09 由来の IPL ブートセクタ）は **MIT** で、Copyright (c) 2026 YUKARI Semiconductor Devices です（`LICENSE-MIT`）。単独のブートセクタで、カーネルにはリンクされません。
-* FUZIX 本体は Alan Cox らの作品です（GPL-2.0、ライブラリは LGPL。FUZIX の `LICENCE` と `CREDITS` を参照）。`bank4k.c` は FUZIX の `bank8k.c`、ステージ 1 は `platform-sim09` が元です。
-* この移植は [Claude Code](https://claude.com/claude-code)（Anthropic の AI コーディングツール）の支援を受けて開発しました。作者が方針を決め、エミュレータと実機で動作を確認しています。
-* 「FUJITSU」「FM-11」は各権利者の商標です。本プロジェクトは富士通とは無関係です。
+* FUZIX 本体は Alan Cox らの作品です（GPL-2.0、ライブラリは LGPL。FUZIX の `LICENCE` と `CREDITS` を参照）。`bank4k.c` は FUZIX の `bank8k.c`、レベル 1 は `platform-sim09` が元です。
+* この移植は [Claude Code](https://claude.com/claude-code)（Anthropic の AI コーディングツール）の支援を受けて開発しました。作者が方針を決め、実機で動作を確認しています。
+* 「FUJITSU」「FUJITSU MICRO」「FM-11」は各権利者の商標です。本プロジェクトは富士通とは無関係です。
