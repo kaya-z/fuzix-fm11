@@ -33,15 +33,27 @@ Use Level 2 (`fuzix-fm11mmu`) unless you have a reason not to.
 
 ### Disk images
 
-Prebuilt images are in `out_mmu/` (raw 2HD, 1,021,696 bytes; `.hfe` for FlashFloppy / Gotek):
+Prebuilt images are in `out_mmu/` (Level 2) and `out/` (Level 1). The `.img` files are raw 2HD disks (1,021,696 bytes); the `.hfe` files are the same disks for FlashFloppy / Gotek (3,233,792 bytes). The contents below were checked from the partition tables of the images.
 
-| File | Content |
-|---|---|
-| `fuzix_mmu_fd0.img` / `.hfe` | Boot disk: IPL, kernel, root file system (1400 blocks) **and a 480-block swap partition** (`hda2`) |
-| `fuzix_mmu_fd1.img` / `.hfe` | Optional separate swap disk (1920 blocks) for a real second drive. Not needed with the disk above |
-| `fuzix.map`, `fuzix_kernel.img` | Link map, kernel in the boot-image format |
+**Level 2 (`out_mmu/`, recommended)**
 
-Boot log of the combined disk: `hda: hda1 hda2 (swap)`.
+| File | Content | Use |
+|---|---|---|
+| `fuzix_mmu_fd0.img` / `.hfe` | **Boot disk**: IPL, kernel (145 sectors), root file system (`hda1`, 1400 blocks) and swap partition (`hda2`, 480 blocks, type `0x7F`). The `.img` and the `.hfe` are the same disk | Drive 0 |
+| `fuzix_mmu_fd1.img` / `.hfe` | Swap-only disk: no IPL, kernel or file system; one swap partition of 1920 blocks (16 processes). For a real second drive | Drive 1. Not needed with the boot disk above, which has its own swap partition |
+| `fuzix_kernel.img` | The kernel alone (boot-image format) | Reference |
+| `fuzix.map` | Link map | Debugging |
+| `FF.CFG` | FlashFloppy configuration (`interface = shugart`, `pin02 = nc`, `pin34 = rdy`, `motor-delay = ignore`, `nav-mode = native`) | Put it in the root of the USB stick |
+
+**Level 1 (`out/`)**
+
+| File | Content | Use |
+|---|---|---|
+| `fuzix_fd0.img` / `.hfe` | Boot disk: IPL, kernel, root file system (1800 blocks). No swap partition | Drive 0 |
+| `fuzix_fd1.img` / `.hfe` | Swap-only disk (480 blocks, type `0x7F`). Level 1 has one process in memory and needs it | Drive 1 |
+| `fuzix_kernel.img`, `fuzix.map`, `ipl_2hd.bin` | The kernel alone, link map, the IPL (486 bytes) | Reference |
+
+Boot log of the Level 2 boot disk: `hda: hda1 hda2 (swap)`.
 
 ### Running
 
@@ -126,15 +138,27 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 ### ディスクイメージ
 
-ビルド済みのイメージは `out_mmu/` にあります（生の 2HD、1,021,696 バイト。FlashFloppy / Gotek 用に `.hfe` も用意）。
+ビルド済みのイメージは `out_mmu/`（レベル 2）と `out/`（レベル 1）にあります。`.img` は生の 2HD（1,021,696 バイト）、`.hfe` は同じディスクを FlashFloppy / Gotek 用に変換したもの（3,233,792 バイト）です。以下の内容は、イメージのパーティションテーブルを読んで確認したものです。
 
-| ファイル | 内容 |
-|---|---|
-| `fuzix_mmu_fd0.img` / `.hfe` | 起動ディスク：IPL、カーネル、ルートファイルシステム（1400 ブロック）、**スワップ区画 480 ブロック**（`hda2`） |
-| `fuzix_mmu_fd1.img` / `.hfe` | 別ドライブ用のスワップ専用ディスク（1920 ブロック）。上の起動ディスクを使うなら不要です |
-| `fuzix.map`、`fuzix_kernel.img` | リンクマップ、ブートイメージ形式のカーネル |
+**レベル 2（`out_mmu/`、推奨）**
 
-この起動ディスクのログは `hda: hda1 hda2 (swap)` となります。
+| ファイル | 内容 | 使い方 |
+|---|---|---|
+| `fuzix_mmu_fd0.img` / `.hfe` | **起動ディスク**：IPL、カーネル（145 セクタ）、ルートファイルシステム（`hda1`、1400 ブロック）、スワップ区画（`hda2`、480 ブロック、タイプ `0x7F`）。`.img` と `.hfe` は同じディスクです | ドライブ 0 |
+| `fuzix_mmu_fd1.img` / `.hfe` | スワップ専用ディスク：IPL・カーネル・ファイルシステムは無く、1920 ブロック（16 プロセス分）のスワップ区画が 1 つだけです。本物の 2 台目ドライブ用 | ドライブ 1。上の起動ディスクには自前のスワップ区画があるので、それを使うなら不要です |
+| `fuzix_kernel.img` | カーネル単体（ブートイメージ形式） | 参照用 |
+| `fuzix.map` | リンクマップ | デバッグ用 |
+| `FF.CFG` | FlashFloppy の設定（`interface = shugart`、`pin02 = nc`、`pin34 = rdy`、`motor-delay = ignore`、`nav-mode = native`） | USB メモリの直下に置く |
+
+**レベル 1（`out/`）**
+
+| ファイル | 内容 | 使い方 |
+|---|---|---|
+| `fuzix_fd0.img` / `.hfe` | 起動ディスク：IPL、カーネル、ルートファイルシステム（1800 ブロック）。スワップ区画は無し | ドライブ 0 |
+| `fuzix_fd1.img` / `.hfe` | スワップ専用ディスク（480 ブロック、タイプ `0x7F`）。レベル 1 はメモリ上のプロセスが 1 つなので、これが必要です | ドライブ 1 |
+| `fuzix_kernel.img`、`fuzix.map`、`ipl_2hd.bin` | カーネル単体、リンクマップ、IPL（486 バイト） | 参照用 |
+
+レベル 2 の起動ディスクのログは `hda: hda1 hda2 (swap)` となります。
 
 ### 実行方法
 
