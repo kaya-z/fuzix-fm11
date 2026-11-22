@@ -40,6 +40,7 @@ Prebuilt images are in `diskimage/mmu/` (Level 2) and `diskimage/no_mmu/` (Level
 | File | Content | Use |
 |---|---|---|
 | `fuzix_mmu_fd0.img` / `.hfe` | **Boot disk**: IPL, kernel (145 sectors), root file system (`hda1`, 1400 blocks) and swap partition (`hda2`, 480 blocks, type `0x7F`). The `.img` and the `.hfe` are the same disk | Drive 0 |
+| `fuzix_mmu_fd0_noswap.img` / `.hfe` | Boot disk for a **real second drive**: IPL, kernel, root file system (`hda1`, 1800 blocks), no swap partition | Drive 0 (with a swap disk in drive 1) |
 | `fuzix_mmu_fd1.img` / `.hfe` | Swap-only disk: no IPL, kernel or file system; one swap partition of 1920 blocks (16 processes). For a real second drive | Drive 1. Not needed with the boot disk above, which has its own swap partition |
 | `fuzix_kernel.img` | The kernel alone (boot-image format) | Reference |
 | `fuzix.map` | Link map | Debugging |
@@ -60,7 +61,7 @@ Boot log of the Level 2 boot disk: `hda: hda1 hda2 (swap)`.
 **Real FM-11**: use a 2HD drive or a Gotek with FlashFloppy and `fuzix_mmu_fd0.hfe`. DIPSW `0xBF` (2HD boot from drive 0, see the [MK09 FM-11 notes](https://github.com/kaya-z/sim09/blob/master/mk09/fm11/README.md)); `FF.CFG`: `interface = shugart`, pin02 `nc`, pin34 `rdy`.
 
 * A single Gotek cannot emulate two drives. If you put jumpers on both DS0 and DS1, the second drive shows the same image as the first, so `hdb` is a copy of the boot disk. **Use only the S0 jumper** and the combined disk. Do not write to `/dev/hdb*` in that state.
-* For a real second drive, put `fuzix_mmu_fd1.hfe` in a second Gotek set to DS1. The kernel uses the first swap partition it finds, so build the boot disk without the swap partition in that case (`-S` omitted, root 1800 blocks).
+* For a real second drive, put `fuzix_mmu_fd1.hfe` in a second Gotek set to DS1. The kernel uses the first swap partition it finds, so boot from `fuzix_mmu_fd0_noswap.img` (no swap partition) in that case. A floppy that is not a swap disk yet is formatted physically on another system (FUZIX has no format command: the driver only issues restore, seek and sector read/write), then log in and run `dd if=/etc/swapmbr of=/dev/hdb bs=512 count=1` (writes the partition table: one swap partition of 1920 blocks, type `0x7F`) and reboot; the boot log then shows `hdb: hdb1 (swap)`. Never write it to `/dev/hda`: it would destroy the partition table of the boot disk.
 
 ### Building
 
@@ -145,6 +146,7 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 | ファイル | 内容 | 使い方 |
 |---|---|---|
 | `fuzix_mmu_fd0.img` / `.hfe` | **起動ディスク**：IPL、カーネル（145 セクタ）、ルートファイルシステム（`hda1`、1400 ブロック）、スワップ区画（`hda2`、480 ブロック、タイプ `0x7F`）。`.img` と `.hfe` は同じディスクです | ドライブ 0 |
+| `fuzix_mmu_fd0_noswap.img` / `.hfe` | **本物の 2 台目ドライブ用**の起動ディスク：IPL、カーネル、ルートファイルシステム（`hda1`、1800 ブロック）。スワップ区画は無し | ドライブ 0（ドライブ 1 にスワップディスク） |
 | `fuzix_mmu_fd1.img` / `.hfe` | スワップ専用ディスク：IPL・カーネル・ファイルシステムは無く、1920 ブロック（16 プロセス分）のスワップ区画が 1 つだけです。本物の 2 台目ドライブ用 | ドライブ 1。上の起動ディスクには自前のスワップ区画があるので、それを使うなら不要です |
 | `fuzix_kernel.img` | カーネル単体（ブートイメージ形式） | 参照用 |
 | `fuzix.map` | リンクマップ | デバッグ用 |
@@ -165,7 +167,7 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 **実機の FM-11**：2HD ドライブ、または FlashFloppy を入れた Gotek と `fuzix_mmu_fd0.hfe` を使います。DIPSW は `0xBF`（ドライブ 0 から 2HD 起動。[MK09 の FM-11 版の説明](https://github.com/kaya-z/sim09/blob/master/mk09/fm11/README.md)を参照）です。Gotek の `FF.CFG` は `interface = shugart`、pin02 `nc`、pin34 `rdy` にします。
 
 * Gotek 1 台で 2 台分のドライブは再現できません。DS0 と DS1 の両方にジャンパを入れると、2 台目も 1 台目と同じイメージを返し、`hdb` が起動ディスクのコピーに見えます。**ジャンパは S0 だけ**にして、上の同居版ディスクを使ってください。その状態で `/dev/hdb*` に書き込まないでください。
-* 本物の 2 台目ドライブを使うなら、DS1 に設定した 2 台目の Gotek に `fuzix_mmu_fd1.hfe` を入れます。カーネルは最初に見つけたスワップ区画を使うので、その場合は起動ディスクをスワップ区画なし（`-S` を付けず、ルート 1800 ブロック）で作ってください。
+* 本物の 2 台目ドライブを使うなら、DS1 に設定した 2 台目の Gotek に `fuzix_mmu_fd1.hfe` を入れます。カーネルは最初に見つけたスワップ区画を使うので、その場合は、スワップ区画の無い `fuzix_mmu_fd0_noswap.img` から起動してください。まだスワップ用になっていないフロッピーは、別の環境で物理フォーマットします（FUZIX にフォーマット命令は無く、ドライバが出すのは restore・seek・セクタの読み書きだけです）。そのうえでログインし、`dd if=/etc/swapmbr of=/dev/hdb bs=512 count=1`（区画テーブルを書き込みます。1920 ブロックのスワップ区画 1 つ、タイプ `0x7F`）を実行して再起動します。起動ログに `hdb: hdb1 (swap)` と出れば成功です。書き込み先を `/dev/hda` にすると起動ディスクの区画テーブルが消えるので、注意してください。
 
 ### ビルド
 

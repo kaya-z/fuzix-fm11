@@ -44,11 +44,26 @@ make -j$J TARGET=fm11mmu YACC=yacc ltools libs stand kernel
 # od in the minimal root file system too
 grep -q "^f 0755 /bin/od  " Applications/util/fuzix-util.pkg || sed -i "0,/^f 0755 \/bin\/mount       mount/s//&\nf 0755 \/bin\/od          od/" Applications/util/fuzix-util.pkg
 
-# root file system (big endian, 512 byte blocks)
+# /etc/swapmbr: the partition table (one swap partition of 1920 blocks from block 1, type 0x7F) of the swap disk;
+# on a real second drive: dd if=/etc/swapmbr of=/dev/hdb bs=512 count=1
+python3 - <<'PY'
+import struct
+m = bytearray(512)
+m[446 + 4] = 0x7F
+m[454:462] = struct.pack('<II', 1, 1920)
+m[510:512] = b'\x55\xaa'
+open('Standalone/filesystem-src/etc-files/swapmbr', 'wb').write(m)
+PY
+grep -q swapmbr Standalone/filesystem-src/fuzix-basefs.pkg || sed -i 's#^f 0755 /etc/rc.reboot etc-files/rc.reboot#&\nf 0644 /etc/swapmbr  etc-files/swapmbr#' Standalone/filesystem-src/fuzix-basefs.pkg
+
+# root file systems (big endian, 512 byte blocks): BSIZE (with swap on the same disk) and BSIZE2 (no swap partition, for a real second drive)
 (cd Standalone/filesystem-src && ./build-mini-filesystem -X "$WORK/rootfs.img" "$ISIZE" "$BSIZE")
+(cd Standalone/filesystem-src && ./build-mini-filesystem -X "$WORK/rootfs_noswap.img" "$ISIZE" "${BSIZE2:-1800}")
 
 # the IPL of the FM-11 (the one of MK09) and the disks
 lwasm --format=raw -o "$WORK/ipl_2hd.bin" "$HERE/../fuzix-fm11/boot/ipl_fm11_2hd.s"
 python3 "$HERE/../fuzix-fm11/mkfd.py" --ipl "$WORK/ipl_2hd.bin" -k Kernel/platform/platform-fm11mmu/fuzix.img -f "$WORK/rootfs.img" \
     -b "$KBLOCKS" -S ${SWAP0BLKS:-480} -o "$WORK/fuzix_fd0.img" -s ${SWAPBLKS:-1920} -o1 "$WORK/fuzix_fd1.img"
-echo "done: $WORK/fuzix_fd0.img $WORK/fuzix_fd1.img"
+python3 "$HERE/../fuzix-fm11/mkfd.py" --ipl "$WORK/ipl_2hd.bin" -k Kernel/platform/platform-fm11mmu/fuzix.img -f "$WORK/rootfs_noswap.img" \
+    -b "$KBLOCKS" -o "$WORK/fuzix_fd0_noswap.img"
+echo "done: $WORK/fuzix_fd0.img $WORK/fuzix_fd0_noswap.img $WORK/fuzix_fd1.img"
