@@ -7,7 +7,7 @@
 - MSG はリセットで 0、MMR の中身は不定 -> 有効化前に全セット初期化が必要。
 - 主記憶は 128KB 単位で最大 1MB。MK09 の `memprobe` は窓越しに `$A5 $5A` を書き読みし、下位ミラーを除外して判定 (未実装域の見え方は実機未確認)。
 
-## 方針: coco3 型 (カーネル用マップ + ユーザ用マップ)
+## 方針: カーネル用マップ + ユーザ用マップの 2 組だけを使う (FUZIX の CoCo 3 版と同じ使い方)
 - 使うセットは 2 つだけ: set 0 = カーネル、set 1 = 現在のユーザプロセス。
   プロセス切替のたびに set 1 の MMR 16 個を書き換える (セット数の上限 15 を避ける)。
 - set 0 は恒等写像。現在のフラット配置 (text 0600-6E97、data E300-F9BD) をほぼそのまま使える。
@@ -28,7 +28,7 @@
 
 
 ## Result of stage 2a (2026-11-21)
-Implemented as designed (coco3-style two maps, `bank4k.c`, window A/B for user memory and fork copies), see `fuzix-fm11mmu/README.md`.
+Implemented as designed (two map sets (kernel and process, as in the FUZIX CoCo 3 port), `bank4k.c`, window A/B for user memory and fork copies), see `fuzix-fm11mmu/README.md`.
 Bugs found on the way: `map_proc_always` left the saved A on the stack (return address off by one byte);
 `memprobe` did not put the test pattern back, so every machine looked like 256KB; `.bss` overlapped `.text2`;
 the pool stack was fine (the earlier "row[0]=0" came from the compiler's `ptr[i] = pfree[--pfptr]`, replaced by `getpage()`).

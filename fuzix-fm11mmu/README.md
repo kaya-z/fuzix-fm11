@@ -43,7 +43,6 @@ Emulator: `fm11 --headless FRAMES s.ppm -f0 fuzix_mmu_fd0.img -f1 fuzix_mmu_fd1.
   than `ls`/`ps` (more heap than 2KB, more pages) will not fit: swap (idle processes such as init out to the disk) is the next step.
   With 256KB (208KB pool) everything fits.
 * Hardware behaviour not verified on a real machine: reads of unmapped pages, the `FD57` parity NMI of the expansion memory.
-* `login`: "unable to change owner of controlling tty" appears, harmless so far.
 * The kernel text is tight: `.text2` ends at `$7106`, `.bss` starts at `$7200` (`fuzix.link`).  Header changes do not trigger a rebuild
   (touch the .c files).
 

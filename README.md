@@ -12,7 +12,7 @@ There are two ports in this repository:
 
 | Directory | Level | What it is |
 |---|---|---|
-| `fuzix-fm11/` | 1 | MMU off, 64KB flat, one process in memory, swap only. Derived from the `platform-sim09` of FUZIX. |
+| `fuzix-fm11/` | 1 | MMU off, 64KB flat, one process in memory, swap only. Derived from [`platform-sim09`](https://github.com/kaya-z/sim09/tree/master/fuzix/platform-sim09) (the FUZIX platform of sim09). |
 | `fuzix-fm11mmu/` | 2 | **MMU on**: 4KB pages, several processes in RAM, **installed memory detected automatically and all of it used** (128KB–1MB), text sharing on `fork`, swap to disk. |
 
 Use Level 2 (`fuzix-fm11mmu`) unless you have a reason not to.
@@ -21,12 +21,11 @@ Use Level 2 (`fuzix-fm11mmu`) unless you have a reason not to.
 
 * Running on a real FM-11 with 896KB (the banner shows `896K RAM (MMU on), 848K for processes`). `root` (empty password) gets a shell and the standard FUZIX commands (`ls`, `ps`, `cat`, `dd`, `od`, `mount`, `reboot` ...) are available. Real-hardware testing is still in progress: the swap partition on a second drive, the behaviour of unmapped memory reads and the parity NMI (`$FD57`) are **not verified on a real machine**.
 * `shutdown` / `halt` stop the machine (`Halted.`); the FM-11 cannot be switched off by software.
-* `login` prints `unable to change owner of controlling tty` (harmless so far).
 
 ### Features of Level 2
 
 * **MMU** (`$FD80–$FD93`): the FM-11's own MMU (16 map sets of 16 × 4KB pages, a window at `$7C00`, `$FC00–$FFFF` not remapped). The kernel uses only two of the map sets, the way the FUZIX CoCo 3 port does: set 0 = kernel (identity), set 1 = current process (reloaded lazily from a 16-byte page table). Windows at `$A000` / `$B000` give the kernel access to any physical page for user-memory access and `fork` copies.
-* **Memory detection** (`memprobe` in `fm11.s`, after MK09): probes in 128KB steps through the MMU window, restores what it touched, and builds the page pool from the result.
+* **Memory detection** (`memprobe` in `fm11.s`, after [MK09's `memprobe`](https://github.com/kaya-z/sim09/blob/master/mk09/arch/m6809/kernel.s)): probes in 128KB steps through the MMU window, restores what it touched, and builds the page pool from the result.
 * **Page manager** `bank4k.c` (derived from `bank8k.c`): 4KB pages, per-process page table, reference counts for shared pages.
 * **Process size**: if the binary does not set `a_size`, text+data+bss rounded up to whole pages plus 2KB (16KB when the pool is 160KB or more) for stack and heap. `chmem` gives a program more room. The last page of a program is also the page holding `udata`, so a process costs one page less.
 * **Text sharing**: `fork` does not copy pages that hold only program text. The MMU has no write protection, so this relies on programs not writing their text.
@@ -46,7 +45,7 @@ Boot log of the combined disk: `hda: hda1 hda2 (swap)`.
 
 ### Running
 
-**Real FM-11**: use a 2HD drive or a Gotek with FlashFloppy and `fuzix_mmu_fd0.hfe`. DIPSW as for a 2HD boot disk of MK09; `FF.CFG` as for MK09 (`interface = shugart`, pin02 `nc`, pin34 `rdy`).
+**Real FM-11**: use a 2HD drive or a Gotek with FlashFloppy and `fuzix_mmu_fd0.hfe`. DIPSW `0xBF` (2HD boot from drive 0, see the [MK09 FM-11 notes](https://github.com/kaya-z/sim09/blob/master/mk09/fm11/README.md)); `FF.CFG`: `interface = shugart`, pin02 `nc`, pin34 `rdy`.
 
 * A single Gotek cannot emulate two drives. If you put jumpers on both DS0 and DS1, the second drive shows the same image as the first, so `hdb` is a copy of the boot disk. **Use only the S0 jumper** and the combined disk. Do not write to `/dev/hdb*` in that state.
 * For a real second drive, put `fuzix_mmu_fd1.hfe` in a second Gotek set to DS1. The kernel uses the first swap partition it finds, so build the boot disk without the swap partition in that case (`-S` omitted, root 1800 blocks).
@@ -84,15 +83,15 @@ Physical pages 0–9 belong to the kernel, 10–13 and 16..top form the process 
 
 ### Hardware references
 
-FM-7 / FM-11 Application Note (MMU, DMA, FDC), the FM-11 boot ROM IPL conventions, and the MK09 FM-11 port (`mk09/bsp/fm11`) for the display sub-CPU, keyboard and floppy code.
+FM-7 / FM-11 Application Note (MMU, DMA, FDC), the FM-11 boot ROM IPL conventions, and the [MK09 FM-11 port (`mk09/bsp/fm11`)](https://github.com/kaya-z/sim09/tree/master/mk09/bsp/fm11) for the display sub-CPU, keyboard and floppy code.
 
 ### License and credits
 
 Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 * The FM-11 port (`platform-fm11*`, `mkfd.py`, `mkimage.py`, the build scripts) is **GPL-2.0-only**, the same as the FUZIX kernel it is part of (`LICENSE`, SPDX header in each source file; the few files without a header, such as `fuzix.link`, `map.info` and `fuzix.export`, are under the same license).
-* `fuzix-fm11/boot/ipl_fm11_2hd.s` (the IPL boot sector, from MK09) is **MIT**, Copyright (c) 2026 YUKARI Semiconductor Devices (`LICENSE-MIT`). It is a stand-alone boot sector and is not linked into the kernel.
-* FUZIX itself is by Alan Cox and contributors (GPL-2.0, libraries LGPL; see the FUZIX `LICENCE` and `CREDITS`). `bank4k.c` is derived from FUZIX `bank8k.c`, and Level 1 from `platform-sim09`.
+* `fuzix-fm11/boot/ipl_fm11_2hd.s` (the IPL boot sector, from [MK09](https://github.com/kaya-z/sim09/blob/master/mk09/boot/ipl_fm11_2hd.s)) is **MIT**, Copyright (c) 2026 YUKARI Semiconductor Devices (`LICENSE-MIT`). It is a stand-alone boot sector and is not linked into the kernel.
+* FUZIX itself is by Alan Cox and contributors (GPL-2.0, libraries LGPL; see the FUZIX `LICENCE` and `CREDITS`). `bank4k.c` is derived from FUZIX `bank8k.c`, and Level 1 from [`platform-sim09`](https://github.com/kaya-z/sim09/tree/master/fuzix/platform-sim09).
 * This port was developed with the help of [Claude Code](https://claude.com/claude-code) (Anthropic's AI coding tool); the author directed the work.
 * "FUJITSU", "FUJITSU MICRO" and "FM-11" are trademarks of their owners. This project is not affiliated with Fujitsu.
 
@@ -106,7 +105,7 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 | ディレクトリ | レベル | 内容 |
 |---|---|---|
-| `fuzix-fm11/` | 1 | MMU を使わない 64KB フラット構成。メモリ上のプロセスは 1 つで、スワップのみ。FUZIX の `platform-sim09` が元です。 |
+| `fuzix-fm11/` | 1 | MMU を使わない 64KB フラット構成。メモリ上のプロセスは 1 つで、スワップのみ。[`platform-sim09`](https://github.com/kaya-z/sim09/tree/master/fuzix/platform-sim09)（sim09 用の FUZIX プラットフォーム）が元です。 |
 | `fuzix-fm11mmu/` | 2 | **MMU 使用**。4KB ページ、複数プロセスの同時常駐、**実装メモリの自動検出と全量使用**（128KB〜1MB）、`fork` 時のテキスト共有、ディスクへのスワップ。 |
 
 特に理由がなければレベル 2（`fuzix-fm11mmu`）を使ってください。
@@ -115,12 +114,11 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 * 実機（896KB 搭載の FM-11）で動作しています（バナーは `896K RAM (MMU on), 848K for processes`）。`root`（パスワードなし）でシェルに入り、標準の FUZIX コマンド（`ls`、`ps`、`cat`、`dd`、`od`、`mount`、`reboot` など）が使えます。実機での確認は進行中で、2 台目ドライブ上のスワップ区画、未実装メモリの読み出し時の挙動、パリティ NMI（`$FD57`）は**実機では未確認**です。
 * `shutdown` / `halt` は `Halted.` と表示して停止します。FM-11 はソフトウェアで電源を切れません。
-* `login` で `unable to change owner of controlling tty` と出ますが、今のところ実害はありません。
 
 ### レベル 2 の特徴
 
 * **MMU**（`$FD80〜$FD93`）：FM-11 独自の MMU です（4KB × 16 ページのマップセットが 16 組、`$7C00` に窓、`$FC00〜$FFFF` は対象外）。カーネルは、FUZIX の CoCo 3 版と同じように、そのうち 2 組だけを使います。セット 0 がカーネル（恒等写像）、セット 1 が現在のプロセスで、16 バイトのページ表から必要なときにだけ再設定します。`$A000` / `$B000` の窓から任意の物理ページに触れるので、ユーザメモリのアクセスや `fork` のコピーに使います。
-* **メモリ自動検出**（`fm11.s` の `memprobe`、MK09 由来）：MMU の窓越しに 128KB 刻みで試し書きし、触った内容を元に戻して、結果からページプールを作ります。
+* **メモリ自動検出**（`fm11.s` の `memprobe`、[MK09 の `memprobe`](https://github.com/kaya-z/sim09/blob/master/mk09/arch/m6809/kernel.s) 由来）：MMU の窓越しに 128KB 刻みで試し書きし、触った内容を元に戻して、結果からページプールを作ります。
 * **ページ管理** `bank4k.c`（`bank8k.c` を改造）：4KB ページ、プロセスごとのページ表、共有ページの参照カウント。
 * **プロセスサイズ**：バイナリが `a_size` を指定しない場合は、text+data+bss をページ単位に切り上げ、さらにスタックとヒープ用に 2KB（プールが 160KB 以上なら 16KB）を足します。`chmem` で増やせます。プログラムの最後のページは `udata` のページと同じなので、プロセス 1 つあたり 1 ページ節約できます。
 * **テキスト共有**：`fork` はプログラムのテキストだけを含むページをコピーしません。この MMU には書き込み保護がないので、プログラムが自分のテキストに書き込まないことが前提です。
@@ -140,7 +138,7 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 ### 実行方法
 
-**実機の FM-11**：2HD ドライブ、または FlashFloppy を入れた Gotek と `fuzix_mmu_fd0.hfe` を使います。DIPSW は MK09 の 2HD 起動ディスクと同じ、Gotek の `FF.CFG` も MK09 と同じです（`interface = shugart`、pin02 `nc`、pin34 `rdy`）。
+**実機の FM-11**：2HD ドライブ、または FlashFloppy を入れた Gotek と `fuzix_mmu_fd0.hfe` を使います。DIPSW は `0xBF`（ドライブ 0 から 2HD 起動。[MK09 の FM-11 版の説明](https://github.com/kaya-z/sim09/blob/master/mk09/fm11/README.md)を参照）です。Gotek の `FF.CFG` は `interface = shugart`、pin02 `nc`、pin34 `rdy` にします。
 
 * Gotek 1 台で 2 台分のドライブは再現できません。DS0 と DS1 の両方にジャンパを入れると、2 台目も 1 台目と同じイメージを返し、`hdb` が起動ディスクのコピーに見えます。**ジャンパは S0 だけ**にして、上の同居版ディスクを使ってください。その状態で `/dev/hdb*` に書き込まないでください。
 * 本物の 2 台目ドライブを使うなら、DS1 に設定した 2 台目の Gotek に `fuzix_mmu_fd1.hfe` を入れます。カーネルは最初に見つけたスワップ区画を使うので、その場合は起動ディスクをスワップ区画なし（`-S` を付けず、ルート 1800 ブロック）で作ってください。
@@ -178,14 +176,14 @@ m6809 用 `gcc` 4.6.4（FUZIX が使うもの）、`lwtools`、`perl`、`python3
 
 ### ハードウェア資料
 
-FM-7/FM-11 アプリケーションノート（MMU、DMA、FDC）、FM-11 のブート ROM の IPL 規約、表示サブ CPU・キーボード・フロッピーのコードは MK09 の FM-11 版（`mk09/bsp/fm11`）を参考にしています。
+FM-7/FM-11 アプリケーションノート（MMU、DMA、FDC）、FM-11 のブート ROM の IPL 規約、表示サブ CPU・キーボード・フロッピーのコードは [MK09 の FM-11 版（`mk09/bsp/fm11`）](https://github.com/kaya-z/sim09/tree/master/mk09/bsp/fm11)を参考にしています。
 
 ### ライセンスと謝辞
 
 Copyright (c) 2026 KAYANUMA Shin'ichi（FM-11 版）。
 
 * FM-11 版（`platform-fm11*`、`mkfd.py`、`mkimage.py`、ビルドスクリプト）は、組み込み先の FUZIX カーネルと同じ **GPL-2.0-only** です（`LICENSE`、各ソースファイルの先頭に SPDX 表記）。`fuzix.link`、`map.info`、`fuzix.export` など表記のないファイルも同じライセンスです。
-* `fuzix-fm11/boot/ipl_fm11_2hd.s`（MK09 由来の IPL ブートセクタ）は **MIT** で、Copyright (c) 2026 YUKARI Semiconductor Devices です（`LICENSE-MIT`）。単独のブートセクタで、カーネルにはリンクされません。
-* FUZIX 本体は Alan Cox らの作品です（GPL-2.0、ライブラリは LGPL。FUZIX の `LICENCE` と `CREDITS` を参照）。`bank4k.c` は FUZIX の `bank8k.c`、レベル 1 は `platform-sim09` が元です。
+* `fuzix-fm11/boot/ipl_fm11_2hd.s`（[MK09](https://github.com/kaya-z/sim09/blob/master/mk09/boot/ipl_fm11_2hd.s) 由来の IPL ブートセクタ）は **MIT** で、Copyright (c) 2026 YUKARI Semiconductor Devices です（`LICENSE-MIT`）。単独のブートセクタで、カーネルにはリンクされません。
+* FUZIX 本体は Alan Cox らの作品です（GPL-2.0、ライブラリは LGPL。FUZIX の `LICENCE` と `CREDITS` を参照）。`bank4k.c` は FUZIX の `bank8k.c`、レベル 1 は [`platform-sim09`](https://github.com/kaya-z/sim09/tree/master/fuzix/platform-sim09) が元です。
 * この移植は [Claude Code](https://claude.com/claude-code)（Anthropic の AI コーディングツール）の支援を受けて開発しました。作者が方針を決め、実機で動作を確認しています。
 * 「FUJITSU」「FUJITSU MICRO」「FM-11」は各権利者の商標です。本プロジェクトは富士通とは無関係です。
