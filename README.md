@@ -80,7 +80,7 @@ None. The user space is the standard FUZIX one (the V7 shell and the FUZIX utili
 | `F000–FBFF` | common (map switching, syscall/IRQ entry, drivers) — same physical page in every map |
 | `FC00–FFFF` | not remapped: shared RAM with the display sub-CPU, I/O, RAM vectors |
 
-Physical pages 0–9 belong to the kernel, 10–13 and 16..top form the process pool, 14 = udata of the first process, 15 = common. More detail: [`DESIGN_MMU.md`](DESIGN_MMU.md) (Japanese/English notes).
+Physical pages 0–9 belong to the kernel, 10–13 and 16..top form the process pool, 14 = udata of the first process, 15 = common. More detail: [`docs/DESIGN_MMU.md`](docs/DESIGN_MMU.md) (Japanese/English notes).
 
 ### Hardware references
 
@@ -174,7 +174,7 @@ m6809 用 `gcc` 4.6.4（FUZIX が使うもの）、`lwtools`、`perl`、`python3
 | `F000〜FBFF` | コモン（マップ切替、システムコール/IRQ の入口、ドライバ）。どのマップでも同じ物理ページ |
 | `FC00〜FFFF` | マップ対象外：表示サブ CPU との共有 RAM、I/O、RAM ベクタ |
 
-物理ページ 0〜9 がカーネル、10〜13 と 16 以上がプロセス用プール、14 が最初のプロセスの udata、15 がコモンです。詳細は [`DESIGN_MMU.md`](DESIGN_MMU.md) を参照してください。
+物理ページ 0〜9 がカーネル、10〜13 と 16 以上がプロセス用プール、14 が最初のプロセスの udata、15 がコモンです。詳細は [`docs/DESIGN_MMU.md`](docs/DESIGN_MMU.md) を参照してください。
 
 ### ハードウェア資料
 

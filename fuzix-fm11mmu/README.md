@@ -2,7 +2,7 @@
 
 Second stage of the FM-11 port: the FM-11 MMU (16 maps of 16 x 4KB pages, `FD80-FD93`) with several processes in RAM
 (`CONFIG_MULTI`, a 4KB page manager `bank4k.c` derived from `mm/bank8k.c`), and the installed memory (128KB..1MB) is found at boot and
-all of it is used.  Design memo: `../DESIGN_MMU.md`.
+all of it is used.  Design memo: `../docs/DESIGN_MMU.md`.
 
 **Status (2026-11-21): boots in the Fm11gtk emulator to the login prompt with `--mem 128/256/384/640/1024`; `root` gets a shell, `ls`, `ps`,
 `cat` work with 256KB and more.  With 128KB login, shell, `ls`, `ps` work too.
