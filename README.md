@@ -19,8 +19,10 @@ Use Level 2 (`fuzix-fm11mmu`) unless you have a reason not to.
 
 ### Status
 
-* Running on a real FM-11 with 896KB (the banner shows `896K RAM (MMU on), 848K for processes`). `root` (empty password) gets a shell and the standard FUZIX commands (`ls`, `ps`, `cat`, `dd`, `od`, `mount`, `reboot` ...) are available. Real-hardware testing is still in progress: the swap partition on a second drive, the behaviour of unmapped memory reads and the parity NMI (`$FD57`) are **not verified on a real machine**.
-* `shutdown` / `halt` stop the machine (`Halted.`); the FM-11 cannot be switched off by software.
+* **Level 2 boots on a real FM-11 with 896KB** (the banner shows `896K RAM (MMU on), 848K for processes`). `root` (empty password) gets a shell and the commands that only read (`ls`, `ps`, `cat`, `od` ...) work.
+* **Known problem on the real machine: writing to a floppy disk emulator based on FlashFloppy (Gotek) does not work yet.** Real floppy drives have not been tried. Creating a file silently fails, so `/var/run/utmp` is not created, `reboot` / `shutdown` (which need `/var/run/initctl`) have no effect, and Level 1, which cannot run without swap writes, stops with `_switchin: FAIL`. The same happens with MK09 on the same hardware, so the FlashFloppy emulation may not accept writes from the FM-11. The cause is not identified yet; under investigation.
+* `reboot -f` restarts the machine; `halt` stops it (`Halted.`). The FM-11 cannot be switched off by software.
+* Not verified on a real machine: swap, a second drive, the behaviour of unmapped memory reads and the parity NMI (`$FD57`).
 
 ### Features of Level 2
 
@@ -50,15 +52,16 @@ Prebuilt images are in `diskimage/mmu/` (Level 2) and `diskimage/no_mmu/` (Level
 
 | File | Content | Use |
 |---|---|---|
-| `fuzix_fd0.img` / `.hfe` | Boot disk: IPL, kernel, root file system (1800 blocks). No swap partition | Drive 0 |
-| `fuzix_fd1.img` / `.hfe` | Swap-only disk (480 blocks, type `0x7F`). Level 1 has one process in memory and needs it | Drive 1 |
+| `fuzix_fd0.img` / `.hfe` | **Boot disk**: IPL, kernel (127 sectors), root file system (`hda1`, 1400 blocks) and swap partition (`hda2`, 480 blocks, type `0x7F`). Level 1 keeps one process in memory and needs a swap partition to run at all | Drive 0 (one drive is enough) |
+| `fuzix_fd0_noswap.img` / `.hfe` | Boot disk for a **real second drive**: root file system 1800 blocks, no swap partition | Drive 0, with `fuzix_fd1` in drive 1 |
+| `fuzix_fd1.img` / `.hfe` | Swap-only disk (480 blocks, type `0x7F`) | Drive 1, only with `fuzix_fd0_noswap`. Without any swap partition Level 1 stops right after `init version` with `_switchin: FAIL` |
 | `fuzix_kernel.img`, `fuzix.map`, `ipl_2hd.bin` | The kernel alone, link map, the IPL (486 bytes) | Reference |
 
 Boot log of the Level 2 boot disk: `hda: hda1 hda2 (swap)`.
 
 ### Running
 
-**Real FM-11**: use a 2HD drive or a Gotek with FlashFloppy and `fuzix_mmu_fd0.hfe`. DIPSW `0xBF` (2HD boot from drive 0, see the [MK09 FM-11 notes](https://github.com/kaya-z/sim09/blob/master/mk09/fm11/README.md)); `FF.CFG`: `interface = shugart`, pin02 `nc`, pin34 `rdy`.
+**Real FM-11**: use a 2HD drive or a Gotek with FlashFloppy and `fuzix_mmu_fd0.hfe`. `FF.CFG`: `interface = shugart`, pin02 `nc`, pin34 `rdy`.
 
 * A single Gotek cannot emulate two drives. If you put jumpers on both DS0 and DS1, the second drive shows the same image as the first, so `hdb` is a copy of the boot disk. **Use only the S0 jumper** and the combined disk. Do not write to `/dev/hdb*` in that state.
 * For a real second drive, put `fuzix_mmu_fd1.hfe` in a second Gotek set to DS1. The kernel uses the first swap partition it finds, so boot from `fuzix_mmu_fd0_noswap.img` (no swap partition) in that case. A floppy that is not a swap disk yet is formatted physically on another system (FUZIX has no format command: the driver only issues restore, seek and sector read/write), then log in and run `dd if=/etc/swapmbr of=/dev/hdb bs=512 count=1` (writes the partition table: one swap partition of 1920 blocks, type `0x7F`) and reboot; the boot log then shows `hdb: hdb1 (swap)`. Never write it to `/dev/hda`: it would destroy the partition table of the boot disk.
@@ -71,7 +74,7 @@ Needs the m6809 `gcc` 4.6.4 (as used by FUZIX), `lwtools`, `perl`, `python3`, `g
 ./fuzix-fm11mmu/build_fm11mmu.sh WORKDIR
 ```
 
-fetches the FUZIX revision the port was made with, copies `platform-fm11mmu/` into it, builds kernel, libraries and a minimal set of commands, makes the root file system and writes `fuzix_fd0.img` / `fuzix_fd1.img`. Variables: `BSIZE` (root blocks, default 1400), `SWAP0BLKS` (swap on drive 0, default 480), `SWAPBLKS` (swap disk, default 1920). By hand: `make TARGET=fm11mmu YACC=yacc kernel`.
+fetches the FUZIX revision the port was made with, copies `platform-fm11mmu/` into it, builds kernel, libraries and a minimal set of commands, makes the root file systems and writes `fuzix_fd0.img` (with swap), `fuzix_fd0_noswap.img` and `fuzix_fd1.img`. Variables: `BSIZE` (root blocks, default 1400), `SWAP0BLKS` (swap on drive 0, default 480), `SWAPBLKS` (swap disk, default 1920), `BSIZE2` (root blocks of the no-swap disk, default 1800). By hand: `make TARGET=fm11mmu YACC=yacc kernel`.
 
 `fuzix-fm11/mkfd.py` builds the disk images (`-b` kernel blocks, `-S` swap on drive 0, `-s`/`-o1` separate swap disk, `-u` a `/usr` file system).
 
@@ -81,7 +84,7 @@ None. The user space is the standard FUZIX one (the V7 shell and the FUZIX utili
 
 * kernel drivers: console on the display sub-CPU, keyboard, 2HD floppy (MB8877 + DMA), the MMU and the memory detection;
 * `fuzix-fm11/mkfd.py` builds the boot disk (IPL, partition table, kernel, root file system, optional swap partition);
-* the root file system is the minimal FUZIX one, with `od` added. Use `chmem` to give a program more memory than the default size.
+* the root file system is the minimal FUZIX one, with `od` and `/etc/swapmbr` (the partition table of a swap disk, see above) added. Use `chmem` to give a program more memory than the default size.
 
 ### Layout of the kernel (Level 2)
 
@@ -125,8 +128,10 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 ### 状態
 
-* 実機（896KB 搭載の FM-11）で動作しています（バナーは `896K RAM (MMU on), 848K for processes`）。`root`（パスワードなし）でシェルに入り、標準の FUZIX コマンド（`ls`、`ps`、`cat`、`dd`、`od`、`mount`、`reboot` など）が使えます。実機での確認は進行中で、2 台目ドライブ上のスワップ区画、未実装メモリの読み出し時の挙動、パリティ NMI（`$FD57`）は**実機では未確認**です。
-* `shutdown` / `halt` は `Halted.` と表示して停止します。FM-11 はソフトウェアで電源を切れません。
+* **レベル 2 は、実機（896KB 搭載の FM-11）で起動します**（バナーは `896K RAM (MMU on), 848K for processes`）。`root`（パスワードなし）でシェルに入り、読み出しだけのコマンド（`ls`、`ps`、`cat`、`od` など）が使えます。
+* **実機での既知の問題：FlashFloppy を使ったフロッピーディスクエミュレータ（Gotek）への書き込みが、まだ動きません。** 本物のフロッピードライブでは試していません。ファイルを作ってもエラーなしで失敗するため、`/var/run/utmp` が作られず、`/var/run/initctl` を必要とする `reboot` / `shutdown` も効きません。スワップの書き込みができないレベル 1 は `_switchin: FAIL` で止まります。同じハードウェアでは MK09 でも同じ現象が出るので、FlashFloppy のエミュレーションが FM-11 からの書き込みを受け付けない可能性があります。原因はまだ特定できておらず、調査中です。
+* `reboot -f` は再起動し、`halt` は `Halted.` と表示して停止します。FM-11 はソフトウェアで電源を切れません。
+* 実機で未確認のもの：スワップ、2 台目ドライブ、未実装メモリの読み出し時の挙動、パリティ NMI（`$FD57`）。
 
 ### レベル 2 の特徴
 
@@ -156,15 +161,16 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 | ファイル | 内容 | 使い方 |
 |---|---|---|
-| `fuzix_fd0.img` / `.hfe` | 起動ディスク：IPL、カーネル、ルートファイルシステム（1800 ブロック）。スワップ区画は無し | ドライブ 0 |
-| `fuzix_fd1.img` / `.hfe` | スワップ専用ディスク（480 ブロック、タイプ `0x7F`）。レベル 1 はメモリ上のプロセスが 1 つなので、これが必要です | ドライブ 1 |
+| `fuzix_fd0.img` / `.hfe` | **起動ディスク**：IPL、カーネル（127 セクタ）、ルートファイルシステム（`hda1`、1400 ブロック）、スワップ区画（`hda2`、480 ブロック、タイプ `0x7F`）。レベル 1 はメモリ上のプロセスが 1 つなので、スワップ区画が無いと動きません | ドライブ 0（1 台で動きます） |
+| `fuzix_fd0_noswap.img` / `.hfe` | **本物の 2 台目ドライブ用**の起動ディスク：ルートファイルシステム 1800 ブロック、スワップ区画なし | ドライブ 0（ドライブ 1 に `fuzix_fd1`） |
+| `fuzix_fd1.img` / `.hfe` | スワップ専用ディスク（480 ブロック、タイプ `0x7F`） | ドライブ 1。`fuzix_fd0_noswap` と組み合わせる場合だけ使います。スワップ区画がどこにも無いと、レベル 1 は `init version` の直後に `_switchin: FAIL` で止まります |
 | `fuzix_kernel.img`、`fuzix.map`、`ipl_2hd.bin` | カーネル単体、リンクマップ、IPL（486 バイト） | 参照用 |
 
 レベル 2 の起動ディスクのログは `hda: hda1 hda2 (swap)` となります。
 
 ### 実行方法
 
-**実機の FM-11**：2HD ドライブ、または FlashFloppy を入れた Gotek と `fuzix_mmu_fd0.hfe` を使います。DIPSW は `0xBF`（ドライブ 0 から 2HD 起動。[MK09 の FM-11 版の説明](https://github.com/kaya-z/sim09/blob/master/mk09/fm11/README.md)を参照）です。Gotek の `FF.CFG` は `interface = shugart`、pin02 `nc`、pin34 `rdy` にします。
+**実機の FM-11**：2HD ドライブ、または FlashFloppy を入れた Gotek と `fuzix_mmu_fd0.hfe` を使います。Gotek の `FF.CFG` は `interface = shugart`、pin02 `nc`、pin34 `rdy` にします。
 
 * Gotek 1 台で 2 台分のドライブは再現できません。DS0 と DS1 の両方にジャンパを入れると、2 台目も 1 台目と同じイメージを返し、`hdb` が起動ディスクのコピーに見えます。**ジャンパは S0 だけ**にして、上の同居版ディスクを使ってください。その状態で `/dev/hdb*` に書き込まないでください。
 * 本物の 2 台目ドライブを使うなら、DS1 に設定した 2 台目の Gotek に `fuzix_mmu_fd1.hfe` を入れます。カーネルは最初に見つけたスワップ区画を使うので、その場合は、スワップ区画の無い `fuzix_mmu_fd0_noswap.img` から起動してください。まだスワップ用になっていないフロッピーは、別の環境で物理フォーマットします（FUZIX にフォーマット命令は無く、ドライバが出すのは restore・seek・セクタの読み書きだけです）。そのうえでログインし、`dd if=/etc/swapmbr of=/dev/hdb bs=512 count=1`（区画テーブルを書き込みます。1920 ブロックのスワップ区画 1 つ、タイプ `0x7F`）を実行して再起動します。起動ログに `hdb: hdb1 (swap)` と出れば成功です。書き込み先を `/dev/hda` にすると起動ディスクの区画テーブルが消えるので、注意してください。
@@ -177,7 +183,7 @@ m6809 用 `gcc` 4.6.4（FUZIX が使うもの）、`lwtools`、`perl`、`python3
 ./fuzix-fm11mmu/build_fm11mmu.sh WORKDIR
 ```
 
-移植に使った FUZIX のリビジョンを取得し、`platform-fm11mmu/` をコピーして、カーネル・ライブラリ・最小限のコマンドをビルドし、ルートファイルシステムを作って `fuzix_fd0.img` / `fuzix_fd1.img` を出力します。環境変数は `BSIZE`（ルートのブロック数、既定 1400）、`SWAP0BLKS`（ドライブ 0 のスワップ、既定 480）、`SWAPBLKS`（スワップ専用ディスク、既定 1920）です。手作業なら `make TARGET=fm11mmu YACC=yacc kernel` です。
+移植に使った FUZIX のリビジョンを取得し、`platform-fm11mmu/` をコピーして、カーネル・ライブラリ・最小限のコマンドをビルドし、ルートファイルシステムを作って `fuzix_fd0.img`（スワップ同居）、`fuzix_fd0_noswap.img`、`fuzix_fd1.img` を出力します。環境変数は `BSIZE`（ルートのブロック数、既定 1400）、`SWAP0BLKS`（ドライブ 0 のスワップ、既定 480）、`SWAPBLKS`（スワップ専用ディスク、既定 1920）、`BSIZE2`（スワップ無しディスクのルートのブロック数、既定 1800）です。手作業なら `make TARGET=fm11mmu YACC=yacc kernel` です。
 
 ディスクイメージは `fuzix-fm11/mkfd.py` で作ります（`-b` カーネル用ブロック数、`-S` ドライブ 0 のスワップ、`-s` / `-o1` スワップ専用ディスク、`-u` `/usr` 用ファイルシステム）。
 
@@ -187,7 +193,7 @@ m6809 用 `gcc` 4.6.4（FUZIX が使うもの）、`lwtools`、`perl`、`python3
 
 * カーネルのドライバ：表示サブ CPU のコンソール、キーボード、2HD フロッピー（MB8877 と DMA）、MMU とメモリ自動検出。
 * `fuzix-fm11/mkfd.py`：起動ディスク（IPL、区画テーブル、カーネル、ルートファイルシステム、任意でスワップ区画）を作ります。
-* ルートファイルシステムは FUZIX の最小構成に `od` を足したものです。プログラムに既定より多くのメモリを与えるときは `chmem` を使います。
+* ルートファイルシステムは FUZIX の最小構成に `od` と `/etc/swapmbr`（スワップディスクの区画テーブル。上記参照）を足したものです。プログラムに既定より多くのメモリを与えるときは `chmem` を使います。
 
 ### メモリ配置（レベル 2）
 
