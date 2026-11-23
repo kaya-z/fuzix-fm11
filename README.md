@@ -24,6 +24,10 @@ Use Level 2 (`fuzix-fm11mmu`) unless you have a reason not to.
 * `reboot -f` restarts the machine; `halt` stops it (`Halted.`). The FM-11 cannot be switched off by software.
 * Not verified on a real machine: swap, a second drive, the behaviour of unmapped memory reads and the parity NMI (`$FD57`).
 
+Boot screen of Level 2 on a real FM-11 (896KB):
+
+![Boot screen of Level 2 on a real FM-11](docs/boot.jpg)
+
 ### Features of Level 2
 
 * **MMU** (`$FD80–$FD93`): the FM-11's own MMU (16 map sets of 16 × 4KB pages, a window at `$7C00`, `$FC00–$FFFF` not remapped). The kernel uses only two of the map sets, the way the FUZIX CoCo 3 port does: set 0 = kernel (identity), set 1 = current process (reloaded lazily from a 16-byte page table). Windows at `$A000` / `$B000` give the kernel access to any physical page for user-memory access and `fork` copies.
@@ -132,6 +136,10 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 * **実機での既知の問題：FlashFloppy を使ったフロッピーディスクエミュレータ（Gotek）への書き込みが、まだ動きません。** 本物のフロッピードライブでは試していません。ファイルを作ってもエラーなしで失敗するため、`/var/run/utmp` が作られず、`/var/run/initctl` を必要とする `reboot` / `shutdown` も効きません。スワップの書き込みができないレベル 1 は `_switchin: FAIL` で止まります。同じハードウェアでは MK09 でも同じ現象が出るので、FlashFloppy のエミュレーションが FM-11 からの書き込みを受け付けない可能性があります。原因はまだ特定できておらず、調査中です。
 * `reboot -f` は再起動し、`halt` は `Halted.` と表示して停止します。FM-11 はソフトウェアで電源を切れません。
 * 実機で未確認のもの：スワップ、2 台目ドライブ、未実装メモリの読み出し時の挙動、パリティ NMI（`$FD57`）。
+
+実機の FM-11（896KB）でのレベル 2 の起動画面：
+
+![実機の FM-11 でのレベル 2 の起動画面](docs/boot.jpg)
 
 ### レベル 2 の特徴
 
