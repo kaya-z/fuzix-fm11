@@ -19,7 +19,7 @@ Use Level 2 (`fuzix-fm11mmu`) unless you have a reason not to.
 
 ### Status
 
-* **Level 2 boots on a real FM-11 with 896KB** (the banner shows `896K RAM (MMU on), 848K for processes`). `root` (empty password) gets a shell and the commands that only read (`ls`, `ps`, `cat`, `od` ...) work.
+* **Level 2 boots on a real FM-11.** The installed memory is detected automatically (128KB–1MB); the real machine used for testing has 896KB, where the banner shows `896K RAM (MMU on), 848K for processes`. `root` (empty password) gets a shell and the commands that only read (`ls`, `ps`, `cat`, `od` ...) work.
 * **Known problem on the real machine: writing to a floppy disk emulator based on FlashFloppy (Gotek) does not work yet.** Real floppy drives have not been tried. Creating a file silently fails, so `/var/run/utmp` is not created, `reboot` / `shutdown` (which need `/var/run/initctl`) have no effect, and Level 1, which cannot run without swap writes, stops with `_switchin: FAIL`. The same happens with MK09 on the same hardware, so the FlashFloppy emulation may not accept writes from the FM-11. The cause is not identified yet; under investigation.
 * `reboot -f` restarts the machine; `halt` stops it (`Halted.`). The FM-11 cannot be switched off by software.
 * Not verified on a real machine: swap, a second drive, the behaviour of unmapped memory reads and the parity NMI (`$FD57`).
@@ -128,7 +128,7 @@ Copyright (c) 2026 KAYANUMA Shin'ichi (FM-11 port).
 
 ### 状態
 
-* **レベル 2 は、実機（896KB 搭載の FM-11）で起動します**（バナーは `896K RAM (MMU on), 848K for processes`）。`root`（パスワードなし）でシェルに入り、読み出しだけのコマンド（`ls`、`ps`、`cat`、`od` など）が使えます。
+* **レベル 2 は、実機の FM-11 で起動します。** 実装メモリは自動検出します（128KB〜1MB）。動作確認に使っている実機は 896KB 搭載で、バナーは `896K RAM (MMU on), 848K for processes` と表示されます。`root`（パスワードなし）でシェルに入り、読み出しだけのコマンド（`ls`、`ps`、`cat`、`od` など）が使えます。
 * **実機での既知の問題：FlashFloppy を使ったフロッピーディスクエミュレータ（Gotek）への書き込みが、まだ動きません。** 本物のフロッピードライブでは試していません。ファイルを作ってもエラーなしで失敗するため、`/var/run/utmp` が作られず、`/var/run/initctl` を必要とする `reboot` / `shutdown` も効きません。スワップの書き込みができないレベル 1 は `_switchin: FAIL` で止まります。同じハードウェアでは MK09 でも同じ現象が出るので、FlashFloppy のエミュレーションが FM-11 からの書き込みを受け付けない可能性があります。原因はまだ特定できておらず、調査中です。
 * `reboot -f` は再起動し、`halt` は `Halted.` と表示して停止します。FM-11 はソフトウェアで電源を切れません。
 * 実機で未確認のもの：スワップ、2 台目ドライブ、未実装メモリの読み出し時の挙動、パリティ NMI（`$FD57`）。
